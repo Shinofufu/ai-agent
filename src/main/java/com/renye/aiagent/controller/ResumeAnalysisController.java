@@ -2,7 +2,6 @@ package com.renye.aiagent.controller;
 
 import com.renye.aiagent.dto.ResumeInfo; // 导入我们定义的 DTO
 import org.apache.pdfbox.Loader;
-import org.apache.pdfbox.io.RandomAccessRead;
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.text.PDFTextStripper;
 import org.slf4j.Logger;
@@ -90,28 +89,28 @@ public class ResumeAnalysisController {
 
         // 3. 创建 Prompt 模板
         String templateString = """
-                你是一位专业的 HR 助手，擅长从简历中精确提取关键信息。
-                请仔细阅读并分析以下简历文本，严格按照要求提取信息。
+        你是一位专业的 HR 助手，擅长从简历中精确提取关键信息。
+        请仔细阅读并分析以下简历文本，严格按照要求提取信息。
 
-                简历文本:
-                ```
-                {resume_text}
-                ```
+        简历文本:
+        ```
+        {resume_text}
+        ```
 
-                请提取以下信息，并严格按照 JSON 格式返回:
-                - name: 候选人姓名 (如果找不到明确的姓名，返回 "未知")
-                - email: 候选人邮箱 (如果找不到，返回 "")
-                - phone: 候选人电话号码 (最好是手机号，如果找不到，返回 "")
-                - educationSummary: 教育背景的简洁摘要 (将所有教育经历合并为一个字符串)
-                - projects: 一个包含所有项目经历的列表，每个项目包含（此外如果有 工作经历 ，也加入到这个信息当中）:
-                  - projectName: 项目名称
-                  - dateRange: 项目起止日期范围 (如 "2023年09月 - 2024年09月")
-                  - description: 项目的详细描述、主要职责或技术亮点。**请注意：这个描述应该尽可能完整，不仅包括项目开头的概述性介绍，还必须包括紧随其后的所有具体职责描述、核心职责、技术亮点、项目成果等详细信息点。将与该项目相关的所有描述性文本合并到这个字段中，确保信息的完整性，不要遗漏细节。**
+        请提取以下信息，并严格按照 JSON 格式返回:
+        - name: 候选人姓名 (如果找不到明确的姓名，返回 "未知")
+        - email: 候选人邮箱 (如果找不到，返回 "")
+        - phone: 候选人电话号码 (最好是手机号，如果找不到，返回 "")
+        - educationSummary: 教育背景的简洁摘要 (将所有教育经历合并为一个字符串)
+        - projects: 一个包含所有项目经历的列表，每个项目包含（此外如果有 工作经历 ，也加入到这个信息当中）:
+          - projectName: 项目名称
+          - dateRange: 项目起止日期范围 (如 "2023年09月 - 2024年09月" ，如果没有，就返回空字符串 "")
+          - tags: 一个字符串列表，包含从该项目描述中识别出的主要技术、关键技能或知识领域标签 (例如：["Java", "Spring Boot", "微服务架构", "数据分析", "Python"])。请尽量提取3-5个核心标签。如果无法从项目描述中明确分析出相关标签，请返回一个空列表 []。
 
-                {format_instructions}
+        {format_instructions}
 
-                确保 JSON 格式正确，所有字段都包含在内。如果某项信息确实找不到，请按上述说明填入默认值或空字符串/列表。
-                """;
+        确保 JSON 格式正确，所有字段都包含在内。如果某项信息确实找不到，请按上述说明填入默认值或空字符串/列表。
+        """;
         PromptTemplate promptTemplate = new PromptTemplate(templateString);
 
         // 4. 准备模板变量
@@ -143,7 +142,7 @@ public class ResumeAnalysisController {
 
     }
 
-    // --- 可以添加一个接收纯文本的端点作为备选 ---
+    // --- 添加一个接收纯文本的端点作为备选 ---
     @PostMapping("/analyze-text")
     public ResponseEntity<?> analyzeResumeText(@RequestBody String resumeText) {
         if (resumeText == null || resumeText.isBlank()) {
