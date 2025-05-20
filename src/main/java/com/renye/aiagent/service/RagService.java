@@ -75,11 +75,7 @@ public class RagService {
             }
         }
 
-        // 如果当前用户查询为空（例如，面试刚开始，用户仅仅开始发言，期望AI先发问），
-        // 则不进行知识库检索，直接使用interviewContext中的动态系统提示和空的用户历史。
-        // 或者，您的AiInterviewerService可以负责生成第一个问题。
-        // 这里我们假设如果用户没说话，AI也不主动基于RAG提问（除非系统提示词本身包含提问指令）。、、
-        // todo : 修改为 当用户发出开始的类似的消息后，AiInterviewerService可以负责生成第一个问题。
+
         if (!StringUtils.hasText(currentUserQuery)) {
             log.warn("RAG: 用户当前查询为空，但系统提示词已包含上下文，直接调用LLM。");
             return chatModel.stream(new Prompt(allMessagesIncludingDynamicSystem));
