@@ -4,10 +4,32 @@ spring:
   ai:
     dashscope:
       api-key: sk-10449cb4f8e04306b215cb57fe3a10fb
+      embedding:
+        options:
+          model: text-embedding-v2
       chat:
         options:
           model: qwen-turbo
 
+interview:
+  knowledge-base:
+    pdf-resource-path: "knowledgebase/pdfs/" # 确保末尾有斜杠
+    # tag-to-file-keywords: # 可以留空，我们在代码里动态匹配
+    #   java:
+    #     - "Java 基础篇.pdf" # 可以是完整文件名或关键词
+    #     - "Java 集合框架篇.pdf"
+    #     - "JVM篇.pdf"
+    #     - "Java并发编程.pdf"
+    #   spring:
+    #     - "Spring 篇.pdf"
+    #   mysql:
+    #     - "MySQL篇.pdf"
+    #   redis:
+    #     - "Redis 篇.pdf"
+    #   # ... 其他映射
+    default-pdf-files: # 候选：一些通用的，或者如果tag匹配不到时加载的
+      - "面试逆袭 Java 基础篇.pdf" # 例如，Java基础总是需要的
+      # - "面试逆袭计算机网络.pdf"
 server:
   port: 8123
   servlet:

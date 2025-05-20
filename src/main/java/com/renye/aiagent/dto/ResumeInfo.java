@@ -9,18 +9,18 @@ public record ResumeInfo(
         String name,
         String email,
         String phone,
-        String educationSummary, // 教育背景暂时合并为一个字符串
+        String educationSummary,
         List<ProjectExperience> projects // 项目经历列表
 ) {
-    // 如果需要默认值或构造函数，可以不使用 Record 而用普通 Class
+
 
     /**
      * 嵌套 Record 定义项目经验结构
-     * 修改点：为 ProjectExperience 添加 tags 字段
      */
     public record ProjectExperience(
             String projectName,
             String dateRange,
+            String description,
             List<String> tags // <--- 新增字段：用于存储项目相关的技术标签列表
     ) {}
 }

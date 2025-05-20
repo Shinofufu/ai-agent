@@ -15,7 +15,14 @@ public class OpenAIChatRequest {
 
     @JsonProperty("top_p") // 将 JSON 中的 "top_p" 映射到 Java 字段 "topP"
     private Double topP;
+    static class StreamOptions { // 新增
+        public Boolean include_usage;
+    }
 
+    static class OpenAIChatRequestMessage {
+        public String role;
+        public Object content; // content 可以是 String 或 List<Map<String, String>> (用于多模态)
+    }
     private Integer n;
     private Boolean stream;
 

@@ -22,13 +22,13 @@ import java.io.InputStream;
 import java.util.Map;
 @CrossOrigin
 @RestController
-@RequestMapping("/resume") // API 的基础路径
+@RequestMapping("/resume")
 public class ResumeAnalysisController {
 
     private static final Logger log = LoggerFactory.getLogger(ResumeAnalysisController.class);
 
     @Resource
-    private ChatModel dashScopeChatModel; // 注入你在配置中定义的 ChatModel Bean
+    private ChatModel dashScopeChatModel;
 
     @PostMapping("/analyze") // 定义 POST 端点，用于接收文件上传
     public ResponseEntity<?> analyzeResume(@RequestParam("file") MultipartFile file) {
@@ -61,8 +61,8 @@ public class ResumeAnalysisController {
             log.info("向 AI 模型发送简历分析请求...");
             ChatResponse response = dashScopeChatModel.call(prompt);
             String rawResponseContent = response.getResult().getOutput().getText();
-            log.info("收到 AI 响应");
-            log.debug("原始 AI 响应:\n{}", rawResponseContent); // 调试时可以取消注释看原始输出
+
+            log.debug("原始 AI 响应:\n{}", rawResponseContent);
 
             // 7. 解析 AI 响应
             log.info("尝试解析 AI 响应为 ResumeInfo 对象...");
@@ -105,6 +105,7 @@ public class ResumeAnalysisController {
         - projects: 一个包含所有项目经历的列表，每个项目包含（此外如果有 工作经历 ，也加入到这个信息当中）:
           - projectName: 项目名称
           - dateRange: 项目起止日期范围 (如 "2023年09月 - 2024年09月" ，如果没有，就返回空字符串 "")
+          - description: 项目的详细描述、主要职责或技术亮点。**请注意：这个描述应该尽可能完整，不仅包括项目开头的概述性介绍，还必须包括紧随其后的所有具体职责描述、核心职责、技术亮点、项目成果等详细信息点。将与该项目相关的所有描述性文本合并到这个字段中，确保信息的完整性，不要遗漏细节。**
           - tags: 一个字符串列表，包含从该项目描述中识别出的主要技术、关键技能或知识领域标签 (例如：["Java", "Spring Boot", "微服务架构", "数据分析", "Python"])。请尽量提取3-5个核心标签。如果无法从项目描述中明确分析出相关标签，请返回一个空列表 []。
 
         {format_instructions}
