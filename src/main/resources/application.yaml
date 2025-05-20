@@ -3,7 +3,7 @@ spring:
     name: ai-agent
   ai:
     dashscope:
-      api-key: sk-10449cb4f8e04306b215cb57fe3a10fb
+      api-key:
       embedding:
         options:
           model: text-embedding-v2
