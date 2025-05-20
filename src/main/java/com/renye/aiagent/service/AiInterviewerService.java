@@ -42,7 +42,7 @@ public class AiInterviewerService {
         // 添加通用的面试官行为指令 (这部分可以和baseSystemPrompt合并或细化)
         systemPromptBuilder.append("\n\n你的面试任务是：\n");
         systemPromptBuilder.append("1. 根据候选人的背景和期望交流的领域，提出相关、有深度、开放式的技术问题和情景问题。\n");
-        systemPromptBuilder.append("2. 仔细聆听并分析候选人的回答，进行有针对性的追问。\n");
+        systemPromptBuilder.append("2. 仔细聆听并分析候选人的回答,因为语言转译问题，可能会出现错别字的现象很正常，你需要努力去理解并且进行有针对性的追问。\n");
         systemPromptBuilder.append("3. 评估候选人在相关领域的技术掌握程度、实际项目经验、问题分析与解决能力以及沟通表达能力。\n");
         systemPromptBuilder.append("4. 保持面试的专业性和互动性，营造一个积极的面试氛围。\n");
         systemPromptBuilder.append("5. 你的提问和回复都应该简洁明了，一次对话通常包含2-3句话，并正确使用标点符号。\n");

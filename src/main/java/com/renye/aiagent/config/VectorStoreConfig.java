@@ -10,6 +10,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 
+/**
+ * @author 忍
+ */
 @Configuration
 public class VectorStoreConfig {
 
@@ -24,9 +27,6 @@ public class VectorStoreConfig {
         }
         log.info("正在创建 SimpleVectorStore bean (通过 Builder)，使用的 EmbeddingModel 类型: {}", embeddingModel.getClass().getName());
 
-        // --- 修改点在这里 ---
-        // 使用 SimpleVectorStore.Builder 来创建实例
-        // 这通常是创建一个纯内存、非持久化的 VectorStore
         return SimpleVectorStore.builder(embeddingModel)
                 .build();
 

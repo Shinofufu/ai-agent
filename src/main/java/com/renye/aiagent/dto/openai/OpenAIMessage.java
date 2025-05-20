@@ -1,13 +1,14 @@
 package com.renye.aiagent.dto.openai;
 
+import lombok.AllArgsConstructor;
+import lombok.Data;
+
+/**
+ * @author 忍
+ */
+@Data
+@AllArgsConstructor
 public class OpenAIMessage {
     public String role;
-    public Object content; // content可以是String (文本), 或 List<Map<String, Object>> (多模态)
-
-    public OpenAIMessage() {}
-
-    public OpenAIMessage(String role, Object content) {
-        this.role = role;
-        this.content = content;
-    }
+    public Object content;
 }

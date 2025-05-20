@@ -13,6 +13,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.util.CollectionUtils;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.ArrayList;
 import java.util.HashMap; // 用于简单返回
 import java.util.Map;     // 用于简单返回
 import java.util.stream.Collectors;
@@ -49,7 +50,8 @@ public class InterviewController {
         CurrentInterviewContextPojo contextToStore = new CurrentInterviewContextPojo(
                 dynamicSystemPrompt,
                 setupRequest.getSelectedInterviewTags(),
-                setupRequest.getResumeInfo()
+                setupRequest.getResumeInfo(),
+                new ArrayList<>()
         );
 
         currentInterviewContextService.set(contextToStore);

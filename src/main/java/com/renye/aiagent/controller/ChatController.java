@@ -19,6 +19,7 @@ import org.springframework.ai.chat.model.ChatResponse;
 import org.springframework.ai.chat.model.Generation;
 import org.springframework.ai.chat.metadata.ChatGenerationMetadata;
 import org.springframework.ai.chat.metadata.Usage;
+import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 import reactor.core.publisher.Flux;
@@ -100,15 +101,18 @@ public class ChatController {
 
         String dynamicSystemPrompt;
         List<String> tagsForRag = null; // RAG 使用的标签
+        CurrentInterviewContextPojo interviewContext;
         // InterviewSetupRequest originalRequestData = null; // 如果RagService需要原始简历数据
 
         if (contextOptional.isPresent()) {
             CurrentInterviewContextPojo currentContext = contextOptional.get();
             dynamicSystemPrompt = currentContext.getDynamicSystemPrompt();
             tagsForRag = currentContext.getRelevantTagsForRag();
+            interviewContext = contextOptional.get();
             // originalRequestData = currentContext.getOriginalSetupRequest();
             log.info("ChatController: 使用了JVM中存储的当前面试上下文。Tags: {}", tagsForRag);
         } else {
+            interviewContext = null;
             // 如果JVM中没有设置上下文（例如，Vue前端从未调用过/setup-current，或者已被清除）
             // 则使用一个非常通用的默认系统提示词
             log.warn("ChatController: JVM中未找到当前面试上下文，将使用通用AI面试官提示。");
@@ -121,7 +125,7 @@ public class ChatController {
         messagesForRag.add(new SystemMessage(dynamicSystemPrompt)); // 使用动态或默认的系统提示
 
         boolean userMessageFound = false;
-
+        String latestUserMessageContentForTranscript = ""; // 用于记录到transcript
         if (openAiRequest.messages != null) {
             for (var msg : openAiRequest.messages) {
                 if ("system".equalsIgnoreCase(msg.role)) {
@@ -140,6 +144,14 @@ public class ChatController {
         }
         if (!userMessageFound) {
             log.warn("处理的请求中未找到有效的用户消息。AI将仅基于系统提示行动。");
+        }
+        // 【记录用户消息到Transcript】
+        // 我们应该在确认用户消息有效后再记录
+        if (StringUtils.hasText(latestUserMessageContentForTranscript)) {
+            if (interviewContext != null) {
+                interviewContext.addMessageToTranscript("user", latestUserMessageContentForTranscript);
+            }
+            log.info("Transcript: 添加用户消息: {}", latestUserMessageContentForTranscript.substring(0, Math.min(50, latestUserMessageContentForTranscript.length())));
         }
 
         String requestedModelName = openAiRequest.model != null ? openAiRequest.model : "qwen-turbo";
@@ -161,10 +173,14 @@ public class ChatController {
         SseEmitter emitter = new SseEmitter(-1L);
         log.info("处理流式请求: model={}, tags={}", requestedModelName, openAiRequest.tags);
 
-        final String streamId = "chatcmpl-" + UUID.randomUUID();
-        final long createdTimestamp = Instant.now().getEpochSecond();
-        final AtomicBoolean isFirstChunkProcessed = new AtomicBoolean(false); // 用于确保role只发送一次
-        final AtomicReference<Usage> finalUsageFromStream = new AtomicReference<>(null);
+
+        final String streamId = "chatcmpl-" + UUID.randomUUID().toString(); // final for lambda
+        final long createdTimestamp = Instant.now().getEpochSecond(); // final for lambda
+        final AtomicBoolean isFirstChunkProcessed = new AtomicBoolean(false); // final for lambda
+        final AtomicReference<Usage> finalUsageFromStream = new AtomicReference<>(null); // final for lambda
+        final String finalRequestedModelName = openAiRequest.model != null ? openAiRequest.model : "qwen-turbo"; // final
+        final boolean finalIncludeUsage = openAiRequest.streamOptions != null && Boolean.TRUE.equals(openAiRequest.streamOptions.includeUsage); // final
+
 
         emitter.onCompletion(() -> log.info("SseEmitter is completed for streamId: {}", streamId));
         emitter.onTimeout(() -> { log.warn("SseEmitter timed out for streamId: {}", streamId); emitter.complete();});
@@ -174,7 +190,8 @@ public class ChatController {
                 messagesForRag,
                 tagsForRag
         );
-
+        // 用于聚合AI的完整回复
+        StringBuilder aiResponseAggregator = new StringBuilder();
         sseExecutor.execute(() -> {
             try {
                 emitter.send(SseEmitter.event().comment("stream_opened")); // 初始"心跳"
@@ -190,7 +207,10 @@ public class ChatController {
 
                             Generation generation = (springChatResponseChunk.getResults() != null && !springChatResponseChunk.getResults().isEmpty())
                                     ? springChatResponseChunk.getResults().getFirst() : null;
-
+                            //聚合AI回复
+                            if (generation != null && generation.getOutput() != null && generation.getOutput().getContent() != null) {
+                                aiResponseAggregator.append(generation.getOutput().getContent());
+                            }
                             if (generation != null) {
                                 currentChunkContent = generation.getOutput().getContent();
                                 ChatGenerationMetadata genMetadata = generation.getMetadata();
@@ -254,6 +274,15 @@ public class ChatController {
                             // --- 核心转换逻辑结束 ---
                         })
                         .filter(Objects::nonNull) // 过滤掉转换逻辑中可能返回的null (例如，如果我们决定跳过某些空块)
+                        .doOnTerminate(() -> { // 当Flux结束时（正常完成或出错）记录AI的完整回复
+                            String fullAiResponse = aiResponseAggregator.toString();
+                            if (StringUtils.hasText(fullAiResponse)) {
+                                if (interviewContext != null) {
+                                    interviewContext.addMessageToTranscript("assistant", fullAiResponse);
+                                }
+                                log.info("Transcript: 添加AI消息 (聚合后), Stream ID: {}", streamId);
+                            }
+                        })
                         .subscribe(
                                 jsonChunkString -> {
                                     try {
